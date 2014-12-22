@@ -1,5 +1,6 @@
 #!/opt/ghc/7.8.1/bin/runghc
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main where
@@ -139,7 +140,7 @@ data GitType
     | GitTypeGitLink
     deriving (Show,Eq,Ord,Enum)
 
-instance NFData GitType
+instance NFData GitType where rnf !_ = ()
 
 cvtMode :: Text -> GitType
 cvtMode "000000" = GitTypeVoid
