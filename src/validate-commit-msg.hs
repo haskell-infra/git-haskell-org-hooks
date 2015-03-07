@@ -34,8 +34,8 @@ main = do
 
             liftIO $ do
                 -- putStrLn (T.unpack cid)
-                forM_ (zip [1::Int ..] (T.lines msg)) $ \(lno,l) -> do
-                    putStrLn (show lno <> "\t" <> show l)
+                -- forM_ (zip [1::Int ..] (T.lines msg)) $ \(lno,l) -> do
+                --     putStrLn (show lno <> "\t" <> show l)
                 -- putStrLn "--"
 
                 let status = maximum (Nothing : [ Just lvl | LintMsg lvl _ _ _ <- cmsgs ])
