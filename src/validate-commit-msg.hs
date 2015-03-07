@@ -2,6 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Main where
 
@@ -33,8 +34,8 @@ main = do
 
             liftIO $ do
                 -- putStrLn (T.unpack cid)
-                -- forM_ (zip [1::Int ..] (T.lines msg)) $ \(lno,l) -> do
-                --     putStrLn (show lno <> "\t" <> show l)
+                forM_ (zip [1::Int ..] (T.lines msg)) $ \(lno,l) -> do
+                    putStrLn (show lno <> "\t" <> show l)
                 -- putStrLn "--"
 
                 let status = maximum (Nothing : [ Just lvl | LintMsg lvl _ _ _ <- cmsgs ])
@@ -89,9 +90,9 @@ lintMsg msg0 = execWriter $ do
            when (T.any (== '\t') subj) $
                errSubj "subject line contains TAB"
 
-           if | slen > 50 -> warnSubj ("subject line longer than 50 characters (was " <> tshow slen <> " characters)")
-              | slen > 80 -> errSubj  ("subject line longer than 80 characters (was " <> tshow slen <> " characters)"
+           if | slen > 80 -> errSubj  ("subject line longer than 80 characters (was " <> tshow slen <> " characters)"
                                        <> " -- , ideally subject line is at most 50 characters long")
+              | slen > 50 -> warnSubj ("subject line longer than 50 characters (was " <> tshow slen <> " characters)")
               | slen < 8  -> errSubj  ("subject line shorter than 8 characters (was " <> tshow slen <> " characters)")
               | otherwise -> return ()
 
@@ -117,14 +118,17 @@ lintMsg msg0 = execWriter $ do
 
                 when (T.any (== '\t') l) $ warnBody "contains TAB character"
 
-                when (T.isSuffixOf "Summary:" l) $
+                when (T.isPrefixOf "Summary:" l) $
                     warnBody "redundant Phabricator 'Summary:' tag detected -- please trim your commit message"
 
-                if | llen > 72  -> warnBody ("body line longer than 72 characters (was "
-                                             <> tshow llen <> " characters)")
-                   | llen > 100 -> errBody  ("body line longer than 100 characters (was "
-                                             <> tshow llen <> " characters) -- , "
+                when (T.isPrefixOf "Summary: Signed-off-by:" l) $
+                    errBody "'Signed-Off-by:'-marker not starting on first column"
+
+                if | llen > 100 -> errBody  ("body line longer than 100 characters (was "
+                                             <> tshow llen <> " characters) -- "
                                              <> "ideally body lines are at most 72 characters long")
+                   | llen > 72  -> warnBody ("body line longer than 72 characters (was "
+                                             <> tshow llen <> " characters)")
                    | otherwise  -> return ()
 
     return ()
