@@ -22,7 +22,7 @@ import           Common
 hasSuffix :: Text -> Bool
 hasSuffix fn = any (`T.isSuffixOf` fn) suffixes
   where
-    suffixes = T.words ".hs .lhs .cabal"
+    suffixes = T.words ".hs .hsc .lhs .cabal .c .h .lhs-boot .hs-boot"
 
 main :: IO ()
 main = do
