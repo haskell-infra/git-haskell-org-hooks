@@ -10,6 +10,7 @@ import           Control.Monad
 import           Control.Monad.Writer
 import           Data.Function
 import           Data.List
+import           Data.Maybe
 import qualified Data.Text as T
 import           Prelude hiding (FilePath)
 import           Shelly
@@ -59,7 +60,7 @@ main = do
 
                 return status
 
-        unless (null stats) $
+        unless (null $ filter isJust stats) $
             echo "====================================================================================="
 
         let stats1 = maximum (Nothing : stats)
@@ -149,5 +150,3 @@ data LintMsg = LintMsg !LintLvl !Int !Text !Text
 data LintLvl = LintLvlWarn | LintLvlErr
               deriving (Show,Eq,Ord)
 
-tshow :: Show a => a -> Text
-tshow = T.pack . show

@@ -6,6 +6,7 @@ module Common
     , module Shelly
     , module Control.DeepSeq
     , Text
+    , Word
     ) where
 
 import           Control.DeepSeq
@@ -49,6 +50,10 @@ gitCatCommit :: FilePath -> GitRef -> Sh (Text,Text)
 gitCatCommit d ref = do
     tmp <- runGit d "cat-file" ["commit", ref ]
     return (fmap (T.drop 2) $ T.breakOn "\n\n" tmp)
+
+-- | wrapper around @git cat-file commit@
+gitCatBlob :: FilePath -> GitRef -> Sh Text
+gitCatBlob d ref = runGit d "cat-file" ["blob", ref ]
 
 -- | Wrapper around @git rev-parse --verify@
 --
@@ -99,6 +104,21 @@ getModules d ref = do
     return $!! ms'
 
 
+{- |
+
+Possible meanings of the 'Char' value:
+
+ * Added (A),
+ * Copied (C),
+ * Deleted (D),
+ * Modified (M),
+ * Renamed (R),
+ * have their type (i.e. regular file, symlink, submodule, ...) changed (T),
+ * are Unmerged (U),
+ * are Unknown (X),
+ * or have had their pairing Broken (B).
+
+-}
 gitDiffTree :: FilePath -> GitRef -> Sh (Text, [([(GitType, Text, Char)], (GitType, Text), Text)])
 gitDiffTree d ref = do
     tmp <- liftM T.lines $ runGit d "diff-tree" ["--root","-c", "-r", ref]
@@ -119,6 +139,9 @@ gitDiffTree d ref = do
         (oid',[oid,k]) = splitAt n tmp'
         [l'',fp] = T.split (=='\t') l'
         (cols,l') = T.span (==':') l
+
+gitDiffTreePatch :: FilePath -> GitRef -> Text -> Sh Text
+gitDiffTreePatch d ref fname = runGit d "diff-tree" ["--root", "--cc", "-r", ref, "--", fname]
 
 z40 :: GitRef
 z40 = T.pack (replicate 40 '0')
@@ -142,3 +165,7 @@ cvtMode "100755" = GitTypeExeFile
 cvtMode "120000" = GitTypeSymLink
 cvtMode "160000" = GitTypeGitLink
 cvtMode x = error ("cvtMode: " ++ show x)
+
+
+tshow :: Show a => a -> Text
+tshow = T.pack . show
