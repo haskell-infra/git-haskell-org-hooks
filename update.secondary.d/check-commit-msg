@@ -1,0 +1,52 @@
+#!/bin/bash
+
+set -e
+
+[ "$(git config --bool hooks.commitmsgcheck)" = "true" ] || exit 0
+
+echo "performing commit message validations..."
+
+refname="$1"
+oldrev="$2"
+newrev="$3"
+
+CHECKER="${HOME}/bin/validate-commit-msg"
+
+set -e
+
+case "$refname" in
+    refs/heads/wip/*)
+    echo "skipping commit message check for wip/ branch"
+    exit 0
+    ;;
+esac
+
+if [ -z "$GIT_DIR" ]; then
+	echo "Don't run this script from the command line." >&2
+	echo " (if you want, you could supply GIT_DIR then run" >&2
+	echo "  $0 <ref> <oldrev> <newrev>)" >&2
+	exit 1
+fi
+
+if [ -z "$refname" -o -z "$oldrev" -o -z "$newrev" ]; then
+	echo "usage: $0 <ref> <oldrev> <newrev>" >&2
+	exit 1
+fi
+
+# if $oldrev == $zero, then this is a newly created ref
+# if $newrev == $zero it's a commit to delete a ref
+zero="0000000000000000000000000000000000000000"
+
+if [ "$newrev" = "$zero" ]; then
+	newrev_type=delete
+        exit 0
+else
+	newrev_type=$(git cat-file -t $newrev)
+fi
+
+oldrefs=( $(git for-each-ref --format '^%(refname:short)' refs/heads/ | grep -v '^^wip/') )
+
+# list of all commits that became newly reachable from non-wip/ branches
+commits=( $(git rev-list $newrev "${oldrefs[@]}" | tac) )
+
+exec $CHECKER "$GIT_DIR" "${commits[@]}"
