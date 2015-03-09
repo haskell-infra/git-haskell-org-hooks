@@ -53,7 +53,12 @@ gitCatCommit d ref = do
 
 -- | wrapper around @git cat-file commit@
 gitCatBlob :: FilePath -> GitRef -> Sh Text
-gitCatBlob d ref = runGit d "cat-file" ["blob", ref ]
+gitCatBlob d ref = do
+    tmpl <- liftM tread $ runGit d "cat-file" ["-s", ref] -- workaround shelly adding EOLs
+    tmp <- runGit d "cat-file" ["blob", ref]
+    return (T.take tmpl tmp)
+  where
+    tread = read . T.unpack
 
 -- | Wrapper around @git rev-parse --verify@
 --
