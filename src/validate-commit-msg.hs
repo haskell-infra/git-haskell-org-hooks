@@ -93,7 +93,7 @@ lintMsg msg0 = execWriter $ do
 
            if | slen > 80 -> errSubj  ("subject line longer than 80 characters (was " <> tshow slen <> " characters)"
                                        <> " -- , ideally subject line is at most 50 characters long")
-              | slen > 50 -> warnSubj ("subject line longer than 50 characters (was " <> tshow slen <> " characters)")
+              | slen > 72 -> warnSubj ("subject line longer than 72 characters (was " <> tshow slen <> " characters)")
               | slen < 8  -> errSubj  ("subject line shorter than 8 characters (was " <> tshow slen <> " characters)")
               | otherwise -> return ()
 
