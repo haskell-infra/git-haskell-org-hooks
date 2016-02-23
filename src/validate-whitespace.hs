@@ -22,7 +22,13 @@ import           Common
 hasSuffix :: Text -> Bool
 hasSuffix fn = any (`T.isSuffixOf` fn) suffixes
   where
-    suffixes = T.words ".hs .hsc .lhs .cabal .c .h .lhs-boot .hs-boot .x .y"
+    suffixes = T.words ".hs .hsc .hsig .lhs .cabal .c .h .lhs-boot .hs-boot .x .y .T .script"
+
+hasInfix :: Text -> Bool
+hasInfix fn = any (`T.isInfixOf` fn) infixes
+  where
+    -- Use isInfixOf to also catch *.stderr-mingw32, *.stderr-ws-64 etc.
+    infixes = T.words ".stdout .stderr .stdin"
 
 main :: IO ()
 main = do
@@ -35,7 +41,8 @@ main = do
     stats <- shelly $ forM (map T.pack refs) $ \ref -> do
       (cid,deltas) <- gitDiffTree dir ref
 
-      lintMsgs0 <- forM deltas $ \(origs, (gt, blobId), fname) -> if (gt == GitTypeRegFile && hasSuffix fname)
+      lintMsgs0 <- forM deltas $ \(origs, (gt, blobId), fname)
+                                 -> if (gt == GitTypeRegFile && (hasSuffix fname || hasInfix fname))
         then do
           let blobIds0 = [ b0 | (GitTypeRegFile, b0, _) <- origs, b0 /= z40 ]
           blob1  <- gitCatBlob dir blobId
@@ -98,6 +105,10 @@ lintBlob blobs0 blob1 = execWriter $ do
         tell [ LintMsg LintLvlErr lno l "introduces trailing whitespace"
              | (lno,l) <- zip [1..] lns, hasTrail l ]
 
+    when (hasCRLF blob1 && not (any hasCRLF blobs0)) $ do
+        tell [ LintMsg LintLvlErr lno l "introduces Windows line ending"
+             | (lno,l) <- zip [1..] lns, hasCRLF l ]
+
     when (missingFinalEOL blob1) $ if not (any missingFinalEOL blobs0)
           then tell [LintMsg LintLvlErr  llno lln "lacking final EOL"]
           else tell [LintMsg LintLvlWarn llno lln "lacking final EOL"]
@@ -119,6 +130,9 @@ lintBlob blobs0 blob1 = execWriter $ do
                     , " "      `T.isSuffixOf` t
                     , "\t"     `T.isSuffixOf` t
                     ]
+
+    hasCRLF :: Text -> Bool
+    hasCRLF t = "\r\n" `T.isInfixOf` t || "\r" `T.isSuffixOf` t
 
     missingFinalEOL :: Text -> Bool
     missingFinalEOL = not . T.isSuffixOf "\n"
