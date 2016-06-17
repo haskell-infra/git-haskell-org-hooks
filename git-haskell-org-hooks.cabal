@@ -16,7 +16,7 @@ executable submodchecker
   other-modules: Common
 
   build-depends:
-    base    >=4.5  && <4.9,
+    base    >=4.5  && <4.10,
     deepseq >=1.1  && <1.5,
     shelly  >=1.6  && <1.7,
     text    >=0.11 && <1.3
@@ -30,7 +30,7 @@ executable validate-commit-msg
   main-is:             validate-commit-msg.hs
 
   build-depends:
-    base    >=4.5  && <4.9,
+    base    >=4.5  && <4.10,
     deepseq >=1.1  && <1.5,
     mtl     >=2.1  && <2.3,
     shelly  >=1.6  && <1.7,
@@ -44,7 +44,7 @@ executable validate-whitespace
   main-is:             validate-whitespace.hs
 
   build-depends:
-    base    >=4.5  && <4.9,
+    base    >=4.5  && <4.10,
     deepseq >=1.1  && <1.5,
     mtl     >=2.1  && <2.3,
     shelly  >=1.6  && <1.7,
