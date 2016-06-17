@@ -35,16 +35,21 @@ main = do
           echo $ "Submodule update(s) detected in " <> cid <> ":"
 
           (_, msg) <- gitCatCommit dir cid
+          let msg' = T.toLower msg
 
-          unless ("submodule" `T.isInfixOf` msg) $ do
+          unless ("submodule" `T.isInfixOf` msg') $ do
               echo "*FAIL* commit message does not contain magic 'submodule' word"
               quietExit 1
 
           modMapping <- getModules dir ref
           forM_ smDeltas $ \(smPath,smCid) -> do
               echo $ " " <> smPath <> " => " <> smCid
-              (smUrl,_) <- maybe (fail "failed to lookup repo-url") return $
-                           lookup smPath modMapping
+              (smUrl,name) <- maybe (fail "failed to lookup repo-url") return $
+                              lookup smPath modMapping
+
+              unless (T.toLower name `T.isInfixOf` msg') $ do
+                  echo $ "*FAIL* commit message does not mention '" <> name <> "'"
+                  quietExit 1
 
               if not ("." `T.isPrefixOf` smUrl)
                then echo $ "skipping non-relative Git url (" <> smUrl <> ")"

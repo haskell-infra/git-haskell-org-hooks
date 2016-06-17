@@ -82,7 +82,7 @@ gitBranchesContain d ref = do
 
 
 
--- | returns @[(path, (url, key))]@
+-- | returns @[(path, (url, name))]@
 --
 -- may throw exception
 getModules :: FilePath -> GitRef -> Sh [(Text, (Text, Text))]
@@ -99,8 +99,9 @@ getModules d ref = do
               , let (_,key1) = T.break (=='.') (T.init key')
               ]
 
-        ms' = [ (path', (url, k))
+        ms' = [ (path', (url, name))
               | es@((k,_):_) <- groupBy ((==) `on` fst) ms
+              , let (_,name) = T.breakOnEnd "/" k
               , let props = map snd es
               , let url = fromMaybe (error "getModules1") (lookup "url" props)
               , let path' = fromMaybe (error "getModules2") (lookup "path" props)
